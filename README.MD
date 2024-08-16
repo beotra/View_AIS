@@ -3,7 +3,7 @@
 Dự án "Phân loại và phát hiện bất thường các mục tiêu trên biển sử dụng dữ liệu AIS"
 
 ## Table of Contents
-    - [Project Title](#project-title)
+
 - [Project Title](#project-title)
   - [Table of Contents](#table-of-contents)
   - [Giới thiệu](#giới-thiệu)
