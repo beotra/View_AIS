@@ -291,10 +291,10 @@ from tensorflow.keras.losses import MeanSquaredError
 from sklearn.cluster import DBSCAN
 from dtw import dtw
 
-model = load_model("C:/Users/ASUS/Downloads/my_model_latlon_tanggiam.h5", custom_objects={'mse': MeanSquaredError()})
+model = load_model("my_model_latlon_tanggiam.h5", custom_objects={'mse': MeanSquaredError()})
 
 # Đọc dữ liệu
-csv_file = 'C:/Users/ASUS/Desktop/DOAN/View_AIS/01_08.csv'
+csv_file = '01_08.csv'
 df = pd.read_csv(csv_file)
 df=df.dropna(subset=['Longitude', 'Latitude', 'COG', 'SOG'])
 df['# Timestamp'] = pd.to_datetime(df['# Timestamp'], format='%d/%m/%Y %H:%M:%S')
@@ -331,7 +331,7 @@ fig_main = Figure(figsize=(8, 6))
 ax_main = fig_main.add_subplot(111)
 
 # Đọc và hiển thị ảnh nền
-img = mpimg.imread('C:/Users/ASUS/Desktop/DOAN/map.png')
+img = mpimg.imread('map.png')
 image_extent = [11, 13, 53.9, 54.9]
 ax_main.imshow(img, extent=image_extent, origin='upper', aspect='auto')
 ax_main.set_xlim(11, 13)
