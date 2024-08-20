@@ -291,7 +291,7 @@ from tensorflow.keras.losses import MeanSquaredError
 from sklearn.cluster import DBSCAN
 from dtw import dtw
 
-model = load_model("my_model_latlon_tanggiam.h5", custom_objects={'mse': MeanSquaredError()})
+model = load_model("latlon_50.h5", custom_objects={'mse': MeanSquaredError()})
 
 # Đọc dữ liệu
 csv_file = '01_08.csv'
@@ -346,13 +346,16 @@ annotation = None
 # Hàm cập nhật biểu đồ chi tiết
 def update_detail_plot(mmsi, current_time):
     # Lấy thông tin chi tiết của tàu
-    info = df[(df['MMSI'] == mmsi) & (df['# Timestamp'] <= current_time)].tail(5)
+    info = df[(df['MMSI'] == mmsi) & (df['# Timestamp'] <= current_time)].tail(6)
     longitude = info['Longitude'].values
     latitude = info['Latitude'].values
     ais_data = []
     for lon, lat in zip(longitude, latitude):
+        if len(ais_data)==5:
+            break 
         ais_data.append([lon, lat])
-    if len(ais_data)==5:
+
+    if len(info) > 5:
         input_data = np.array(ais_data)
         test_data = np.expand_dims(input_data, axis=0)
         predictions = model.predict(test_data)
@@ -361,9 +364,9 @@ def update_detail_plot(mmsi, current_time):
         
             # Cập nhật biểu đồ chi tiết
         ax_detail.clear()
-        ax_detail.plot(info['Longitude'][:-1], info['Latitude'][:-1], color='blue', marker='o')
+        ax_detail.plot(info['Longitude'].iloc[0:5], info['Latitude'].iloc[0:5], color='blue', marker='o')
         ax_detail.plot(info['Longitude'].iloc[-1], info['Latitude'].iloc[-1], color='orange', marker='o')
-        # ax_detail.plot(predicted_point[1], predicted_point[0], color='green', marker='o')
+        ax_detail.plot(predicted_point[0], predicted_point[1], color='green', marker='o')
         # ax_detail.set_xlim(min(info['Longitude'].min(), predicted_point[1]), max(info['Longitude'].max(), predicted_point[1]))
         # ax_detail.set_ylim(min(info['Latitude'].min(), predicted_point[0]), max(info['Latitude'].max(), predicted_point[0]))
         ax_detail.set_title(f'MMSI: {mmsi} (Last 5 Points)')
@@ -463,7 +466,7 @@ def on_click(event):
         # Ẩn fig_detail nếu không click vào tàu
         canvas_detail_widget.pack_forget()
 
-# Hàm cập nhật dữ liệu và biểu đồ chính
+# # Hàm cập nhật dữ liệu và biểu đồ chính
 def update(frame):
     current_time = start_time + pd.Timedelta(minutes=frame * 10)
     current_data = df[df['# Timestamp'] <= current_time]
@@ -500,6 +503,69 @@ def update(frame):
                 update_detail_plot(mmsi, current_time)
 
     return list(scatters.values())
+# def update(frame):
+#     current_time = start_time + pd.Timedelta(minutes=frame * 10)
+#     current_data = df[df['# Timestamp'] <= current_time]
+
+#     for mmsi, color in mmsi_color_map.items():
+#         data_mmsi = current_data[current_data['MMSI'] == mmsi]
+
+#         if mmsi in scatters:
+#             if scatters[mmsi] is not None:
+#                 scatters[mmsi].remove()
+
+#         if not data_mmsi.empty:
+#             latest_data = data_mmsi.iloc[-1]
+#             latitude = latest_data['Latitude']
+#             longitude = latest_data['Longitude']
+#             goc = latest_data['COG']
+
+#             # Kiểm tra xem tàu có nằm trong vùng biển không
+#             if 53.91 <= latitude <= 54.89 and 11.01 <= longitude <= 12.99:
+#                 arrow = ax_main.text(
+#                     longitude, latitude,
+#                     '➤',
+#                     color=color,
+#                     fontsize=12,
+#                     ha='center',
+#                     va='center',
+#                     rotation=90 - goc,
+#                     rotation_mode='anchor'
+#                 )
+
+#                 if mmsi == selected_mmsi:
+#                     arrow.set_path_effects([PathEffects.Stroke(linewidth=3, foreground='yellow'),
+#                                             PathEffects.Normal()])
+
+#                 scatters[mmsi] = arrow
+
+#                 # Cập nhật biểu đồ chi tiết nếu tàu đã chọn đang có dữ liệu mới
+#                 if selected_mmsi == mmsi:
+#                     update_detail_plot(mmsi, current_time)
+#             else:
+#                 # Nếu tàu ra ngoài vùng biển, xóa khỏi scatters
+#                 if mmsi in scatters:
+#                     scatters[mmsi] = None
+
+#     return list(scatters.values())
+
+#các sự kiện thành phần của khung 
+def on_combobox_select(event):
+    selected_option = combobox.get()
+    if selected_option == "Satellite Map":
+        img = mpimg.imread('map_vetinh.png')
+        image_extent = [11, 13, 53.9, 54.9]
+        ax_main.imshow(img, extent=image_extent, origin='upper', aspect='auto')
+        # Thêm mã để cập nhật bản đồ vệ tinh
+    elif selected_option == "Standard Map":
+        img = mpimg.imread('map_diahinh.png')
+        image_extent = [11, 13, 53.9, 54.9]
+        ax_main.imshow(img, extent=image_extent, origin='upper', aspect='auto')
+        # Thêm mã để cập nhật bản đồ thông thường
+    elif selected_option == "White Background":
+        img = mpimg.imread('map_white.png')
+        image_extent = [11, 13, 53.9, 54.9]
+        ax_main.imshow(img, extent=image_extent, origin='upper', aspect='auto')
 
 # Khởi tạo scatter dictionary và selected_mmsi
 scatters = {mmsi: None for mmsi in mmsi_list}
@@ -515,6 +581,7 @@ fig_main.canvas.mpl_connect('button_press_event', on_click)
 # Hàm khởi tạo animation
 def init():
     return []
+
 
 # Tạo animation cho biểu đồ chính
 ani_main = FuncAnimation(fig_main, update, frames=int((end_time - start_time).total_seconds() // 600 + 1),
@@ -537,8 +604,10 @@ canvas_detail_widget.pack(fill=tk.BOTH, expand=True)
 button = tk.Button(right_frame_top, text="Sample Button")
 button.pack(pady=10, padx=10, anchor='w')
 
-combobox = ttk.Combobox(right_frame_top, values=["Option 1", "Option 2", "Option 3"])
+combobox = ttk.Combobox(right_frame_top, values=["Satellite Map", "Standard Map", "White Background"])
 combobox.pack(pady=10, padx=10, anchor='w')
+combobox.set("Standard Map")
+combobox.bind("<<ComboboxSelected>>", on_combobox_select)
 
 
 
